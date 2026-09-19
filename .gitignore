@@ -49,3 +49,4 @@ commerce.db-*
 *.sqlite
 *.sqlite-*
 test-pass.txt
+.vercel
