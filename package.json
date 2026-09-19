@@ -1,5 +1,12 @@
 {
-  "dependencies": {
-    "framer-motion": "^13.1.1"
+  "scripts": {
+    "dev": "python3 server.py",
+    "start": "python3 server.py",
+    "typecheck": "tsc --noEmit",
+    "test": "python3 -B -m unittest test_server test_checkout",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
   }
 }

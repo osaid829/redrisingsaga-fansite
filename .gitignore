@@ -8,6 +8,24 @@
 *.avif
 *.png
 
+# Public fan-site artwork only. Paid ebook and audiobook files remain excluded.
+!hero-bg.png
+!darrow.jpg
+!sevro au barca.jpg
+!virginia au augustus.jpg
+!Casio_au_Bellona.webp
+!Eo.jpg
+!vicra au julli.jpg
+!Lorn au Arcos.jpg
+!howlers.jpg
+!red rising.jpg
+!Golden son cover.jpg
+!morning star cover.jpg
+!iron gold cover.jpg
+!Dark age cover.jpg
+!Light bringer cover.jpg
+!colours hierarchy.jpg
+
 # Python
 __pycache__/
 *.pyc
@@ -26,3 +44,8 @@ Thumbs.db
 # Local environment
 .env
 .env.local
+commerce.db
+commerce.db-*
+*.sqlite
+*.sqlite-*
+test-pass.txt

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Small, dependency-free server for the Red Rising site and Razorpay checkout.
+"""Local storefront server with durable Razorpay order fulfilment.
 
-Set RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and (in production) RAZORPAY_WEBHOOK_SECRET.
-Without keys the site intentionally stays in simulation mode; it can never charge a card.
+Commerce is intentionally disabled on Vercel because its filesystem is not a
+durable database and the protected media does not fit Vercel static hosting.
 """
 
 import base64
+import http.cookies
 import hashlib
 import hmac
 import http.server
@@ -13,6 +14,8 @@ import io
 import json
 import os
 import secrets
+import shutil
+import tempfile
 import socketserver
 import threading
 import time
@@ -22,31 +25,63 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from commerce import CommerceStore, SESSION_TTL_SECONDS
+
 PORT = int(os.environ.get("PORT", "8000"))
 BASE_DIR = Path(__file__).parent.resolve()
+
+
+def load_dotenv(dotenv_path=None):
+    """Load environment variables from .env file if present."""
+    if dotenv_path is None:
+        dotenv_path = BASE_DIR / ".env"
+    if not os.path.exists(dotenv_path):
+        return
+    try:
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    key = key.strip()
+                    val = val.strip().strip("'\"")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+    except Exception:
+        pass
+
+
+load_dotenv()
+
 MAX_BODY_BYTES = 16_384
-MAX_PENDING_ORDERS = 500
 ORDER_TTL_SECONDS = 15 * 60
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
-PAYMENTS_ENABLED = bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+COMMERCE_DB_PATH = Path(os.environ.get("COMMERCE_DB_PATH", BASE_DIR / "commerce.db"))
+# SQLite gives the local server durable state. A serverless deployment must use a
+# managed database adapter instead, so it fails closed rather than lose purchases.
+PAYMENTS_ENABLED = bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET and not os.environ.get("VERCEL"))
+WEBHOOKS_ENABLED = bool(PAYMENTS_ENABLED and RAZORPAY_WEBHOOK_SECRET)
+commerce_store = CommerceStore(COMMERCE_DB_PATH) if PAYMENTS_ENABLED else None
 
 # Prices live on the server. Never trust a title or amount received from a browser.
 CATALOG = {
-    "red-rising-audio": ("Red Rising Audiobook", {"INR": 199, "USD": 199}),
-    "golden-son-audio": ("Golden Son Audiobook", {"INR": 199, "USD": 199}),
-    "morning-star-audio": ("Morning Star Audiobook", {"INR": 199, "USD": 199}),
-    "iron-gold-audio": ("Iron Gold Audiobook", {"INR": 249, "USD": 249}),
-    "dark-age-audio": ("Dark Age Audiobook", {"INR": 249, "USD": 249}),
-    "light-bringer-audio": ("Light Bringer Audiobook", {"INR": 249, "USD": 249}),
-    "red-rising-ebook": ("Red Rising Ebook", {"INR": 99, "USD": 99}),
-    "golden-son-ebook": ("Golden Son Ebook", {"INR": 99, "USD": 99}),
-    "morning-star-ebook": ("Morning Star Ebook", {"INR": 99, "USD": 99}),
-    "iron-gold-ebook": ("Iron Gold Ebook", {"INR": 99, "USD": 99}),
-    "dark-age-ebook": ("Dark Age Ebook", {"INR": 99, "USD": 99}),
-    "light-bringer-ebook": ("Light Bringer Ebook", {"INR": 99, "USD": 99}),
-    "saga-combo": ("Complete Ebooks & Audiobooks Mega Combo", {"INR": 899, "USD": 899}),
+    "red-rising-audio": ("Red Rising Audiobook", {"INR": 19900, "USD": 199}),
+    "golden-son-audio": ("Golden Son Audiobook", {"INR": 19900, "USD": 199}),
+    "morning-star-audio": ("Morning Star Audiobook", {"INR": 19900, "USD": 199}),
+    "iron-gold-audio": ("Iron Gold Audiobook", {"INR": 24900, "USD": 249}),
+    "dark-age-audio": ("Dark Age Audiobook", {"INR": 24900, "USD": 249}),
+    "light-bringer-audio": ("Light Bringer Audiobook", {"INR": 24900, "USD": 249}),
+    "red-rising-ebook": ("Red Rising Ebook", {"INR": 9900, "USD": 99}),
+    "golden-son-ebook": ("Golden Son Ebook", {"INR": 9900, "USD": 99}),
+    "morning-star-ebook": ("Morning Star Ebook", {"INR": 9900, "USD": 99}),
+    "iron-gold-ebook": ("Iron Gold Ebook", {"INR": 9900, "USD": 99}),
+    "dark-age-ebook": ("Dark Age Ebook", {"INR": 9900, "USD": 99}),
+    "light-bringer-ebook": ("Light Bringer Ebook", {"INR": 9900, "USD": 99}),
+    "saga-combo": ("Complete Ebooks & Audiobooks Mega Combo", {"INR": 89900, "USD": 899}),
 }
 EBOOK_PRODUCT_FILES = {
     "red-rising-ebook": [BASE_DIR / "1_Red_Rising_-_Pierce_Brown.epub"],
@@ -64,13 +99,24 @@ AUDIO_PRODUCT_FOLDERS = {
     "dark-age-audio": {"title": "Dark Age Audiobook", "path": BASE_DIR / "DARK AGE AUDIOBOOK"},
     "light-bringer-audio": {"title": "Light Bringer Audiobook", "path": BASE_DIR / "Light Bringer Audiobook.m4b"},
 }
-PENDING_ORDERS = {}
-PROCESSED_PAYMENTS = set()
-ACCESS_TOKENS = {}
-PURCHASES = {}
-PAYMENT_LOCK = threading.Lock()
 PREVIEW_SECONDS = 600
 PREVIEW_BYTES_PER_SECOND = 128_000 / 8
+RATE_LOCK = threading.Lock()
+RATE_WINDOWS = {}
+
+
+def checkout_allowed(address):
+    now = time.monotonic()
+    with RATE_LOCK:
+        for key in list(RATE_WINDOWS):
+            if now - RATE_WINDOWS[key][0] >= 60:
+                del RATE_WINDOWS[key]
+        if address not in RATE_WINDOWS:
+            if len(RATE_WINDOWS) >= 5000:
+                return False
+            RATE_WINDOWS[address] = [now, 0]
+        RATE_WINDOWS[address][1] += 1
+        return RATE_WINDOWS[address][1] <= 60
 
 MIME_TYPES = {
     ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -88,25 +134,12 @@ PRIVATE_SUFFIXES = {".py", ".pyc", ".pem", ".key", ".sqlite", ".db"}
 
 def valid_signature(secret, message, signature):
     """Constant-time HMAC comparison, shared by checkout and webhook validation."""
+    if (not secret or not message or not isinstance(signature, str)
+            or len(signature) != 64
+            or any(char not in "0123456789abcdef" for char in signature)):
+        return False
     expected = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature or "")
-
-
-def prune_expired_orders(now=None):
-    """Remove stale pending orders so memory use stays bounded."""
-    if now is None:
-        now = time.time()
-    expired_ids = [order_id for order_id, order in PENDING_ORDERS.items() if now - order.get("created", now) > ORDER_TTL_SECONDS]
-    for order_id in expired_ids:
-        PENDING_ORDERS.pop(order_id, None)
-
-
-def issue_access_token(product_id):
-    """Grant a browser token for full audiobook access after purchase."""
-    token = secrets.token_urlsafe(24)
-    ACCESS_TOKENS[token] = product_id
-    PURCHASES[token] = {"product_id": product_id, "created": time.time()}
-    return token
+    return hmac.compare_digest(expected, signature)
 
 
 def resolve_audio_path(product_id, filename):
@@ -204,6 +237,16 @@ def build_download_payload(product_id):
     return None
 
 
+def product_available(product_id):
+    if product_id == "saga-combo":
+        return all(product_available(key) for key in CATALOG if key != "saga-combo")
+    payload = build_download_payload(product_id)
+    if not payload:
+        return False
+    files = [path for path, _ in payload["files"]] if payload["kind"] == "archive" else [payload["path"]]
+    return bool(files) and all(path.is_file() and path.stat().st_size > 0 for path in files)
+
+
 def build_archive_bytes(files, archive_name):
     """Create a ZIP archive in memory for a set of files."""
     buffer = io.BytesIO()
@@ -214,15 +257,31 @@ def build_archive_bytes(files, archive_name):
 
 
 def is_protected_media_path(candidate):
-    """Return True when a requested path points into a protected audiobook folder or file."""
+    """Return True when a requested path points into a protected audiobook folder or file, or protected ebook."""
+    cand = candidate.resolve()
     for spec in AUDIO_PRODUCT_FOLDERS.values():
         media_path = spec["path"].resolve()
-        base_path = media_path if media_path.is_dir() else media_path.parent
-        try:
-            candidate.relative_to(base_path)
-            return True
-        except ValueError:
-            continue
+        if media_path.is_dir():
+            try:
+                cand.relative_to(media_path)
+                return True
+            except ValueError:
+                pass
+        elif media_path.is_file():
+            if cand == media_path:
+                return True
+    for file_list in EBOOK_PRODUCT_FILES.values():
+        for ebook_path in file_list:
+            ep = ebook_path.resolve()
+            if ep.is_dir():
+                try:
+                    cand.relative_to(ep)
+                    return True
+                except ValueError:
+                    pass
+            elif ep.is_file():
+                if cand == ep:
+                    return True
     return False
 
 
@@ -237,13 +296,21 @@ def get_preview_limit_bytes(file_path, preview_seconds=PREVIEW_SECONDS):
     return min(file_size, max(1, preview_bytes))
 
 
-def has_access(token, product_id):
-    """Return True if the supplied token grants access to the requested product."""
-    return bool(token) and ACCESS_TOKENS.get(token) == product_id
+def has_access(session_token, product_id):
+    """Check a database-backed, expiring browser session entitlement."""
+    return bool(commerce_store and commerce_store.has_access(session_token, product_id))
+
+
+class RazorpayAPIError(Exception):
+    def __init__(self, status_code, message):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def razorpay_request(endpoint, payload):
-    """Use Razorpay's Orders API without exposing the secret to a client."""
+    """Use Razorpay's API without exposing the secret to a client."""
+    if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+        raise RazorpayAPIError(401, "Razorpay credentials are not configured on the server")
     credentials = base64.b64encode(f"{RAZORPAY_KEY_ID}:{RAZORPAY_KEY_SECRET}".encode()).decode()
     request = urllib.request.Request(
         f"https://api.razorpay.com/v1/{endpoint}",
@@ -253,31 +320,54 @@ def razorpay_request(endpoint, payload):
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError("Razorpay could not create the order") from exc
+    except urllib.error.HTTPError as exc:
+        err_msg = str(exc)
+        try:
+            err_json = json.loads(exc.read().decode("utf-8"))
+            err_msg = err_json.get("error", {}).get("description", str(exc))
+        except Exception:
+            pass
+        raise RazorpayAPIError(exc.code, err_msg) from exc
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise RazorpayAPIError(500, f"Razorpay API request error: {exc}") from exc
+
+
+def razorpay_get(endpoint):
+    """Fetch canonical payment state from Razorpay before fulfilling an order."""
+    credentials = base64.b64encode(f"{RAZORPAY_KEY_ID}:{RAZORPAY_KEY_SECRET}".encode()).decode()
+    request = urllib.request.Request(
+        f"https://api.razorpay.com/v1/{endpoint}",
+        headers={"Authorization": f"Basic {credentials}"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise RazorpayAPIError(exc.code, "Unable to retrieve payment status") from exc
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise RazorpayAPIError(500, "Unable to retrieve payment status") from exc
 
 
 class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, format, *args):
-        print(f"[{self.log_date_time_string()}] {self.command} {self.path} -> {args[0]}")
+        # Do not retain payment IDs or capability tokens in access logs.
+        print(f"[{self.log_date_time_string()}] {self.command}")
 
     def add_security_headers(self):
+        self.send_header("Cache-Control", "private, no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Range, X-Access-Token")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
-        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
-        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://checkout.razorpay.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://checkout.razorpay.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.razorpay.com; media-src 'self'; connect-src 'self' https://*.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
 
     def do_OPTIONS(self):
         self.send_response(204)
         self.add_security_headers()
-        self.send_header("Allow", "GET, POST, OPTIONS")
+        self.send_header("Allow", "GET, POST")
         self.send_header("Content-Length", "0")
         self.end_headers()
 
@@ -287,6 +377,16 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
             return self.send_json_response(200, {"status": "online", "payments_enabled": PAYMENTS_ENABLED})
         if path == "/api/config":
             return self.send_json_response(200, {"payments_enabled": PAYMENTS_ENABLED, "razorpay_key_id": RAZORPAY_KEY_ID if PAYMENTS_ENABLED else None, "currencies": ["INR", "USD"]})
+        if path == "/api/purchases":
+            products = [product for product in CATALOG if has_access(self.session_token(), product)]
+            return self.send_json_response(200, {"products": products})
+        if path.startswith("/api/download-ready/"):
+            product = path.rsplit("/", 1)[-1]
+            if product not in CATALOG or not has_access(self.session_token(), product):
+                return self.send_error_response(403, "Purchase required")
+            if not product_available(product):
+                return self.send_error_response(503, "Your purchase is saved, but its files are temporarily unavailable")
+            return self.send_json_response(200, {"ready": True})
         if path.startswith("/api/audio/"):
             return self.serve_audio_file(path)
         if path.startswith("/api/download/"):
@@ -299,6 +399,11 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         except ValueError:
             return self.send_error_response(403, "Invalid path")
         relative_parts = candidate.relative_to(BASE_DIR).parts
+        # Only explicit website files and root-level artwork are public. This
+        # also excludes duplicate media, database journals, and local reports.
+        if len(relative_parts) != 1 or (candidate.name not in {"index.html", "style.css", "script.js", "robots.txt", "sitemap.xml"}
+                and candidate.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp", ".avif", ".ico"}):
+            return self.send_error_response(404, "File not found")
         if (any(part.startswith(".") or part in PRIVATE_PATH_PARTS for part in relative_parts)
                 or candidate.suffix.lower() in PRIVATE_SUFFIXES):
             return self.send_error_response(404, "File not found")
@@ -328,73 +433,95 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         body = self.read_json_body()
         if body is None:
             return self.send_error_response(400, "A small JSON request body is required")
-        if path == "/api/order":
+        if path not in {"/api/order", "/api/create-order", "/api/verify", "/api/verify-payment"}:
+            return self.send_error_response(404, "Endpoint not found")
+        if not PAYMENTS_ENABLED:
+            return self.send_error_response(503, "Payments are unavailable on this deployment")
+        if not checkout_allowed(self.client_address[0]):
+            return self.send_error_response(429, "Too many checkout requests. Please wait a minute.")
+        origin = self.headers.get("Origin")
+        if origin and urllib.parse.urlsplit(origin).netloc != self.headers.get("Host"):
+            return self.send_error_response(403, "Cross-origin checkout is not allowed")
+        if path in ("/api/order", "/api/create-order"):
             return self.create_order(body)
-        if path == "/api/verify":
+        if path in ("/api/verify", "/api/verify-payment"):
             return self.verify_payment(body)
-        if path == "/api/access/grant":
-            return self.grant_access(body)
         return self.send_error_response(404, "Endpoint not found")
 
     def create_order(self, body):
         product_id = body.get("product_id")
-        if product_id not in CATALOG:
-            return self.send_error_response(400, "Unknown product")
-        title, amounts = CATALOG[product_id]
-        currency = body.get("currency", "INR")
-        if currency not in amounts:
-            return self.send_error_response(400, "Unsupported currency")
-        amount = amounts[currency]
-        receipt = f"rr_{secrets.token_hex(10)}"
-        if PAYMENTS_ENABLED:
-            try:
-                order = razorpay_request("orders", {"amount": amount, "currency": currency, "receipt": receipt, "notes": {"product_id": product_id}})
-            except RuntimeError:
-                return self.send_error_response(503, "Payment service is temporarily unavailable")
+        currency = str(body.get("currency", "INR")).upper()
+        if isinstance(product_id, str) and product_id in CATALOG:
+            title, amounts = CATALOG[product_id]
+            if currency not in amounts:
+                return self.send_error_response(400, "Unsupported currency")
+            amount = amounts[currency]
         else:
-            order = {"id": f"order_sim_{secrets.token_hex(12)}", "amount": amount, "currency": currency}
-        with PAYMENT_LOCK:
-            prune_expired_orders()
-            if len(PENDING_ORDERS) >= MAX_PENDING_ORDERS:
-                return self.send_error_response(429, "Too many pending orders. Please try again shortly.")
-            PENDING_ORDERS[order["id"]] = {"product_id": product_id, "amount": amount, "currency": currency, "created": time.time()}
-        return self.send_json_response(201, {"order_id": order["id"], "amount": order["amount"], "currency": currency, "name": title, "simulation": not PAYMENTS_ENABLED})
+            return self.send_error_response(400, "A recognized product_id is required")
+        if not product_available(product_id):
+            return self.send_error_response(503, "This product is temporarily unavailable; no payment was requested")
+
+        try:
+            order = razorpay_request("orders", {
+                "amount": amount,
+                "currency": currency,
+                "receipt": f"rr_{secrets.token_hex(10)}",
+                "notes": {"product_id": product_id},
+            })
+            commerce_store.create_order(order["id"], product_id, amount, currency)
+            checkout_token = commerce_store.bind_checkout_session(order["id"], self.session_token())
+        except RazorpayAPIError:
+            return self.send_error_response(502, "The payment provider could not create an order. Please try again.")
+        except Exception:
+            return self.send_error_response(503, "Unable to create an order. Please try again.")
+
+        return self.send_json_response(200, {
+            "order_id": order["id"],
+            "amount": order["amount"],
+            "currency": currency,
+            "name": title,
+            "simulation": False
+        }, extra_headers={"Set-Cookie": self.session_cookie(checkout_token)})
 
     def verify_payment(self, body):
         order_id = body.get("razorpay_order_id", "")
         payment_id = body.get("razorpay_payment_id", "")
         signature = body.get("razorpay_signature", "")
-        if not all(isinstance(value, str) and value for value in (order_id, payment_id, signature)):
-            return self.send_error_response(400, "Missing payment verification values")
-        with PAYMENT_LOCK:
-            prune_expired_orders()
-            known_order = PENDING_ORDERS.get(order_id)
-            duplicate = payment_id in PROCESSED_PAYMENTS
+
+        if not all(isinstance(value, str) and value.strip() for value in (order_id, payment_id, signature)):
+            return self.send_error_response(400, "Missing required verification fields (razorpay_order_id, razorpay_payment_id, razorpay_signature)")
+
+        known_order = commerce_store.get_order(order_id) if commerce_store else None
         if not known_order:
             return self.send_error_response(400, "Unknown or expired order")
-        if duplicate:
-            return self.send_error_response(409, "Payment was already processed")
-        if not PAYMENTS_ENABLED:
-            product_id = known_order["product_id"]
-            token = issue_access_token(product_id)
-            return self.send_json_response(200, {"status": "verified", "payment_id": payment_id, "access_token": token, "product_id": product_id})
-        if not valid_signature(RAZORPAY_KEY_SECRET, f"{order_id}|{payment_id}".encode(), signature):
+        if not valid_signature(RAZORPAY_KEY_SECRET, f"{order_id}|{payment_id}".encode("utf-8"), signature):
             return self.send_error_response(400, "Invalid payment signature")
-        with PAYMENT_LOCK:
-            PROCESSED_PAYMENTS.add(payment_id)
-            PENDING_ORDERS.pop(order_id, None)
-        product_id = known_order["product_id"]
-        token = issue_access_token(product_id)
-        return self.send_json_response(200, {"status": "verified", "payment_id": payment_id, "access_token": token, "product_id": product_id})
-
-    def grant_access(self, body):
-        product_id = body.get("product_id")
-        if product_id not in CATALOG:
-            return self.send_error_response(400, "Unsupported product")
-        token = issue_access_token(product_id)
-        return self.send_json_response(200, {"access_token": token, "product_id": product_id})
+        try:
+            payment = razorpay_get(f"payments/{urllib.parse.quote(payment_id, safe='')}")
+        except RazorpayAPIError:
+            return self.send_error_response(502, "Unable to confirm payment status. Please try again.")
+        if (payment.get("id") != payment_id or payment.get("order_id") != order_id
+                or payment.get("amount") != known_order["amount"]
+                or payment.get("currency") != known_order["currency"]):
+            return self.send_error_response(400, "Payment does not match this order")
+        if payment.get("status") != "captured":
+            return self.send_error_response(409, "Payment is awaiting capture. Retry verification; do not pay again.")
+        if not commerce_store.mark_payment_captured(order_id, payment_id):
+            return self.send_error_response(409, "Payment cannot be applied to this order")
+        session = commerce_store.issue_session_for_order(order_id, self.session_token())
+        if not session:
+            return self.send_error_response(500, "Payment recorded but entitlement could not be created")
+        session_token, expires_at = session
+        return self.send_json_response(200, {
+            "success": True,
+            "status": "verified",
+            "product_id": known_order["product_id"],
+            "expires_at": expires_at,
+        }, extra_headers={"Set-Cookie": self.session_cookie(session_token)})
 
     def handle_webhook(self):
+        if not WEBHOOKS_ENABLED:
+            return self.send_error_response(503, "Payments are unavailable on this deployment")
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
@@ -403,8 +530,46 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         signature = self.headers.get("X-Razorpay-Signature", "")
         if not RAZORPAY_WEBHOOK_SECRET or not raw or not valid_signature(RAZORPAY_WEBHOOK_SECRET, raw, signature):
             return self.send_error_response(400, "Invalid webhook signature")
-        # A production fulfilment worker should consume verified webhook events durably.
-        return self.send_json_response(200, {"status": "received"})
+        try:
+            event = json.loads(raw.decode("utf-8"))
+            payment_info = event.get("payload", {}).get("payment", {}).get("entity", {})
+            order_id, payment_id = payment_info.get("order_id"), payment_info.get("id")
+        except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, TypeError):
+            return self.send_error_response(400, "Invalid webhook payload")
+        if event.get("event") not in {"payment.captured", "order.paid"} or not order_id or not payment_id:
+            return self.send_json_response(200, {"status": "ignored"})
+        known_order = commerce_store.get_order(order_id)
+        if not known_order:
+            return self.send_json_response(200, {"status": "ignored"})
+        try:
+            payment = razorpay_get(f"payments/{urllib.parse.quote(payment_id, safe='')}")
+        except RazorpayAPIError:
+            return self.send_error_response(502, "Unable to confirm payment status")
+        if (payment.get("id") != payment_id or payment.get("order_id") != order_id or payment.get("status") != "captured"
+                or payment.get("amount") != known_order["amount"]
+                or payment.get("currency") != known_order["currency"]):
+            return self.send_error_response(400, "Webhook payment does not match order")
+        if not commerce_store.mark_payment_captured(order_id, payment_id):
+            return self.send_error_response(409, "Payment cannot be applied to this order")
+        first_delivery = commerce_store.mark_webhook_processed(self.headers.get("X-Razorpay-Event-Id", ""))
+        return self.send_json_response(200, {"status": "processed" if first_delivery else "duplicate"})
+
+    def session_cookie(self, token):
+        cookie = http.cookies.SimpleCookie()
+        cookie["rr_session"] = token
+        cookie["rr_session"]["path"] = "/"
+        cookie["rr_session"]["httponly"] = True
+        cookie["rr_session"]["samesite"] = "Strict"
+        cookie["rr_session"]["max-age"] = SESSION_TTL_SECONDS
+        if self.headers.get("X-Forwarded-Proto") == "https":
+            cookie["rr_session"]["secure"] = True
+        return cookie.output(header="").strip()
+
+    def session_token(self):
+        try:
+            return http.cookies.SimpleCookie(self.headers.get("Cookie", "")).get("rr_session").value
+        except (AttributeError, http.cookies.CookieError):
+            return ""
 
     def serve_audio_file(self, path):
         parts = [part for part in urllib.parse.unquote(path).split("/") if part]
@@ -417,8 +582,7 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         audio_path = resolve_audio_path(product_id, filename)
         if not audio_path:
             return self.send_error_response(404, "Audio file not found")
-        access_token = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [self.headers.get("X-Access-Token", "")])[0]
-        if has_access(access_token, product_id):
+        if has_access(self.session_token(), product_id):
             return self.serve_file(audio_path)
         preview_limit = get_preview_limit_bytes(audio_path)
         if preview_limit <= 0:
@@ -445,22 +609,28 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         product_id = parts[2]
         if product_id not in CATALOG:
             return self.send_error_response(404, "Product not found")
-        access_token = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("token", [self.headers.get("X-Access-Token", "")])[0]
-        if not has_access(access_token, product_id):
+        if not has_access(self.session_token(), product_id):
             return self.send_error_response(402, "Purchase this product to download the files.")
         payload = build_download_payload(product_id)
         if not payload:
             return self.send_error_response(404, "Download package not available")
         if payload["kind"] == "archive":
-            archive_bytes = build_archive_bytes(payload["files"], payload["filename"])
-            self.send_response(200)
-            self.add_security_headers()
-            self.send_header("Content-Type", MIME_TYPES.get(".zip", "application/zip"))
-            self.send_header("Content-Length", str(len(archive_bytes)))
-            self.send_header("Content-Disposition", f'attachment; filename="{payload["filename"]}"')
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            self.wfile.write(archive_bytes)
+            # A full saga archive is several GB. Keep it on disk and copy bounded
+            # chunks rather than allocating the entire library in process memory.
+            with tempfile.TemporaryFile() as stream:
+                with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
+                    for file_path, name in payload["files"]:
+                        archive.write(file_path, name)
+                size = stream.tell()
+                stream.seek(0)
+                self.send_response(200)
+                self.add_security_headers()
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Length", str(size))
+                self.send_header("Content-Disposition", f'attachment; filename="{payload["filename"]}"')
+                self.send_header("Cache-Control", "private, no-store")
+                self.end_headers()
+                shutil.copyfileobj(stream, self.wfile, 256 * 1024)
             return
         file_path = payload["path"]
         self.send_response(200)
@@ -471,13 +641,13 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         with file_path.open("rb") as stream:
-            self.wfile.write(stream.read())
+            shutil.copyfileobj(stream, self.wfile, 256 * 1024)
 
     def serve_file(self, file_path):
         content_type = MIME_TYPES.get(file_path.suffix.lower(), "application/octet-stream")
         size = file_path.stat().st_size
         range_header = self.headers.get("Range", "")
-        if range_header and file_path.suffix.lower() == ".mp3":
+        if range_header and file_path.suffix.lower() in {".mp3", ".m4b"}:
             try:
                 unit, value = range_header.split("=", 1)
                 start_text, end_text = value.split("-", 1)
@@ -489,26 +659,46 @@ class RedRisingServerHandler(http.server.BaseHTTPRequestHandler):
                     raise ValueError
                 end = min(end, size - 1)
             except ValueError:
-                self.send_response(416); self.add_security_headers(); self.send_header("Content-Range", f"bytes */{size}"); self.end_headers(); return
+                self.send_response(416); self.add_security_headers(); self.send_header("Content-Range", f"bytes */{size}"); self.send_header("Content-Length", "0"); self.end_headers(); return
             self.send_response(206); self.add_security_headers(); self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(end - start + 1)); self.send_header("Content-Range", f"bytes {start}-{end}/{size}"); self.send_header("Accept-Ranges", "bytes"); self.end_headers()
             with file_path.open("rb") as stream:
-                stream.seek(start); self.wfile.write(stream.read(end - start + 1))
+                stream.seek(start)
+                remaining = end - start + 1
+                while remaining:
+                    chunk = stream.read(min(remaining, 256 * 1024))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
             return
         self.send_response(200); self.add_security_headers(); self.send_header("Content-Type", content_type); self.send_header("Content-Length", str(size)); self.send_header("Accept-Ranges", "bytes"); self.end_headers()
-        with file_path.open("rb") as stream: self.wfile.write(stream.read())
+        with file_path.open("rb") as stream:
+            shutil.copyfileobj(stream, self.wfile, 256 * 1024)
 
-    def send_json_response(self, code, data):
+    def send_json_response(self, code, data, extra_headers=None):
         body = json.dumps(data, separators=(",", ":")).encode("utf-8")
-        self.send_response(code); self.add_security_headers(); self.send_header("Cache-Control", "no-store"); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        self.send_response(code)
+        self.add_security_headers()
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        if extra_headers:
+            for name, value in extra_headers.items():
+                self.send_header(name, value)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def send_error_response(self, code, message):
-        self.send_json_response(code, {"status": "error", "message": message})
+        self.send_json_response(code, {"success": False, "status": "error", "error": message, "message": message})
 
 
 def run_server():
-    with socketserver.ThreadingTCPServer(("", PORT), RedRisingServerHandler) as server:
-        print(f"Red Rising server: http://localhost:{PORT} ({'live payments' if PAYMENTS_ENABLED else 'payment simulation'})")
+    socketserver.TCPServer.allow_reuse_address = True
+    socketserver.ThreadingTCPServer.daemon_threads = True
+    with socketserver.ThreadingTCPServer(("127.0.0.1", PORT), RedRisingServerHandler) as server:
+        mode = "Razorpay payments enabled" if PAYMENTS_ENABLED else "payments unavailable"
+        print(f"Red Rising server: http://localhost:{PORT} ({mode})")
         server.serve_forever()
 
 

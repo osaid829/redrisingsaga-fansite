@@ -32,9 +32,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Razorpay Checkout SDK -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
   <!-- Schema.org JSON-LD Structured Data for Search Engines -->
   <script type="application/ld+json">
   {
@@ -91,7 +88,7 @@
         <a href="#ebook">Ebook</a>
         <a href="#hierarchy">Hierarchy</a>
         <a href="#store" class="btn btn-red" style="padding: 6px 16px; font-size: 0.8rem;" aria-label="View store">
-          🛒 Cart <span class="nav-cart-badge" id="cart-count">0</span>
+          🛒 Store
         </a>
       </div>
     </div>
@@ -116,7 +113,7 @@
           <span class="btn-icon">🛒</span> Explore Store & Deals
         </a>
         <a href="#ebook" class="btn btn-ghost">
-          <span class="btn-icon">📖</span> Free EPUB
+          <span class="btn-icon">📖</span> View Ebook
         </a>
       </div>
       <div class="hero-contact">
@@ -157,7 +154,7 @@
           </button>
           <div class="chapter-player" id="player-1">
             <audio controls preload="none">
-              <source src="red rising audiobook1/CHAPTER 01.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -176,7 +173,7 @@
           </button>
           <div class="chapter-player" id="player-2">
             <audio controls preload="none">
-              <source src="CHAPTER 02.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -195,7 +192,7 @@
           </button>
           <div class="chapter-player" id="player-3">
             <audio controls preload="none">
-              <source src="red rising audiobook1/CHAPTER 03.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -214,7 +211,7 @@
           </button>
           <div class="chapter-player" id="player-4">
             <audio controls preload="none">
-              <source src="CHAPTER 04.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -233,7 +230,7 @@
           </button>
           <div class="chapter-player" id="player-5">
             <audio controls preload="none">
-              <source src="CHAPTER 05.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -252,7 +249,7 @@
           </button>
           <div class="chapter-player" id="player-6">
             <audio controls preload="none">
-              <source src="CHAPTER 06.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -279,7 +276,7 @@
           </button>
           <div class="chapter-player" id="player-gs">
             <audio controls preload="none">
-              <source src="CHAPTER 01.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -297,7 +294,7 @@
           </button>
           <div class="chapter-player" id="player-ig">
             <audio controls preload="none">
-              <source src="CHAPTER 01.mp3" type="audio/mpeg">
+              <source type="audio/mpeg">
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -461,24 +458,17 @@
   <section class="section store-section" id="store">
     <div class="container">
       <div class="section-header">
-        <p class="section-label">Official Store & Digital Library</p>
-        <h2 class="section-title">The <span class="text-gold">Red Rising Armory</span></h2>
-        <p class="section-sub">Acquire audiobooks, standalone ebooks, or the complete bundle combo. Instant access upon purchase.</p>
+        <p class="section-label">Reader's Guide</p>
+        <h2 class="section-title">The <span class="text-gold">Red Rising Library</span></h2>
+        <p class="section-sub">Explore the saga and find official editions from Pierce Brown and authorised retailers.</p>
       </div>
 
       <!-- FILTER TABS -->
       <div class="store-tabs">
         <button class="store-tab-btn active" data-filter="all">All Releases</button>
-        <button class="store-tab-btn" data-filter="audio">Audiobooks ($1.99 - $2.49)</button>
-        <button class="store-tab-btn" data-filter="ebook">Ebooks ($0.99)</button>
-        <button class="store-tab-btn" data-filter="combo">Combo Bundle ($8.99)</button>
-      </div>
-      <div class="checkout-market" aria-label="Checkout region">
-        <label for="checkout-currency">Paying from</label>
-        <select id="checkout-currency" name="checkout-currency">
-          <option value="INR">India — INR ₹</option>
-          <option value="USD">International — USD $</option>
-        </select>
+        <button class="store-tab-btn" data-filter="audio">Audiobooks</button>
+        <button class="store-tab-btn" data-filter="ebook">Ebooks</button>
+        <button class="store-tab-btn" data-filter="combo">Complete Saga</button>
       </div>
 
       <div class="books-grid">
@@ -818,7 +808,7 @@
     <div class="container">
       <div class="footer-inner">
         <p class="footer-logo">⚔ RED RISING SAGA</p>
-        <p class="footer-copy">Per aspera ad astra • Through hardships to the stars. Pierce Brown Fan Universe.</p>
+        <p class="footer-copy">Unofficial, non-commercial fan project. Per aspera ad astra • Through hardships to the stars.</p>
       </div>
     </div>
   </footer>

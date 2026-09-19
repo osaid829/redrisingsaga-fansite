@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const navbar = document.getElementById('navbar');
   window.addEventListener('scroll', () => {
     if (window.scrollY > 40) {
-      navbar.classList.add('scrolled');
+      navbar?.classList.add('scrolled');
     } else {
-      navbar.classList.remove('scrolled');
+      navbar?.classList.remove('scrolled');
     }
   });
 
@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. REAL-TIME 3D CARD TILT EFFECT ON MOUSEMOVE
   const tiltCards = document.querySelectorAll('.tilt-card');
   tiltCards.forEach(card => {
+    if (!(card instanceof HTMLElement)) return;
     card.addEventListener('mousemove', (e) => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -65,43 +66,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. AUDIOBOOK CHAPTER PLAYER LOGIC
   const playButtons = document.querySelectorAll('.chapter-play-btn');
+  /** @type {Element | null} */
   let currentPlayingCard = null;
+  /** @type {HTMLAudioElement | null} */
   let currentAudio = null;
-  let accessTokens = {};
-  const BACKEND_BASE_URL = window.location.port === '3000' ? 'http://127.0.0.1:8000' : '';
+  const BACKEND_BASE_URL = '';
   const AUDIO_BASE_URL = BACKEND_BASE_URL;
-
+  // Public hosts run as a fan edition: no checkout and no distribution of media.
+  const publicFanEdition = !['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const officialSagaUrl = 'https://www.piercebrown.com/redrisingsaga';
+  /** @type {Set<string>} */
+  const ownedProducts = new Set();
+  /** @type {Map<string, PaymentProof>} */
+  const pendingVerifications = new Map();
+  let checkoutActive = false;
   try {
-    const savedTokens = JSON.parse(localStorage.getItem('red-rising-access-tokens') || '{}');
-    if (savedTokens && typeof savedTokens === 'object') accessTokens = savedTokens;
-  } catch (error) {
-    accessTokens = {};
+    localStorage.removeItem('red-rising-access-tokens');
+    for (const proof of JSON.parse(sessionStorage.getItem('rr-pending-payments') || '[]')) {
+      if (proof && typeof proof.product_id === 'string' && typeof proof.razorpay_order_id === 'string'
+          && typeof proof.razorpay_payment_id === 'string' && typeof proof.razorpay_signature === 'string') {
+        pendingVerifications.set(proof.product_id, proof);
+      }
+    }
+  } catch (_) { /* Storage is optional; purchases still use the server session. */ }
+
+  function savePendingVerifications() {
+    try { sessionStorage.setItem('rr-pending-payments', JSON.stringify([...pendingVerifications.values()])); } catch (_) {}
   }
 
-  function persistAccessTokens() {
-    localStorage.setItem('red-rising-access-tokens', JSON.stringify(accessTokens));
+  async function refreshPurchases() {
+    const response = await fetch('/api/purchases', { credentials: 'same-origin' });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!Array.isArray(data.products)) return;
+    ownedProducts.clear();
+    data.products.forEach((/** @type {unknown} */ product) => { if (typeof product === 'string') ownedProducts.add(product); });
+    updatePurchaseLabels();
   }
 
+  function updatePurchaseLabels() {
+    document.querySelectorAll('.buy-btn').forEach(button => {
+      const product = button.getAttribute('data-product-id') || '';
+      if (ownedProducts.has(product)) button.textContent = 'Download purchase';
+      else if (pendingVerifications.has(product)) button.textContent = 'Retry payment verification';
+    });
+  }
+
+  /** @param {string} productId @param {string} filename */
   function buildAudioSrc(productId, filename) {
-    const token = accessTokens[productId] || '';
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${AUDIO_BASE_URL}/api/audio/${productId}/${encodeURIComponent(filename)}${tokenParam}`;
+    return `${AUDIO_BASE_URL}/api/audio/${productId}/${encodeURIComponent(filename)}`;
   }
 
-  function triggerDownload(productId) {
-    const token = accessTokens[productId];
-    if (!token) return false;
-    const downloadUrl = `${AUDIO_BASE_URL}/api/download/${encodeURIComponent(productId)}?token=${encodeURIComponent(token)}`;
+  /** @param {string} productId */
+  async function triggerDownload(productId) {
+    const ready = await fetch(`/api/download-ready/${encodeURIComponent(productId)}`, { credentials: 'same-origin' });
+    const result = await ready.json();
+    if (!ready.ok) throw new Error(result.message || 'Download unavailable. Your purchase is saved.');
+    const downloadUrl = `${AUDIO_BASE_URL}/api/download/${encodeURIComponent(productId)}`;
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.target = '_blank';
-    link.rel = 'noopener';
+    link.download = '';
     document.body.appendChild(link);
     link.click();
     link.remove();
     return true;
   }
 
+  /** @param {string} productId */
   function resolvePreviewFile(productId) {
     const catalog = window.RED_RISING_AUDIO_CATALOG || {};
     const entry = catalog[productId] || {};
@@ -109,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function hydratePreviewSources() {
+    if (publicFanEdition) return;
     document.querySelectorAll('.chapter-card').forEach(card => {
       const btn = card.querySelector('.chapter-play-btn');
       const audio = card.querySelector('audio');
@@ -123,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /** @param {string} productId */
   function updateChapterSources(productId) {
     document.querySelectorAll('.chapter-card').forEach(card => {
       const btn = card.querySelector('.chapter-play-btn');
@@ -131,12 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!btn || !audio || !source) return;
       const filename = btn.getAttribute('data-src') || resolvePreviewFile(productId);
       const btnProductId = btn.getAttribute('data-product-id') || 'red-rising-audio';
-      if (btnProductId !== productId) return;
+      if (btnProductId !== productId && productId !== 'saga-combo') return;
       source.src = buildAudioSrc(btnProductId, filename);
       audio.load();
     });
   }
 
+  /** @param {string} productId @param {string} title */
   function showPurchasePrompt(productId, title) {
     showToast(`Preview unlocked for ${title}. Purchase to continue listening past the first 10 minutes.`);
   }
@@ -146,14 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
   playButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (publicFanEdition) {
+        showToast('Audio previews are not hosted by this fan project. Find official editions below.');
+        return;
+      }
       const card = btn.closest('.chapter-card');
+      if (!card) return;
       const playerContainer = card.querySelector('.chapter-player');
       const audio = card.querySelector('audio');
+      const playIcon = btn.querySelector('.play-icon');
+      if (!playerContainer || !audio || !playIcon) return;
       const productId = btn.getAttribute('data-product-id') || 'red-rising-audio';
       const filename = btn.getAttribute('data-src') || resolvePreviewFile(productId);
       const source = audio.querySelector('source');
-      if (source && filename) {
-        source.src = buildAudioSrc(productId, filename);
+      const audioSrc = buildAudioSrc(productId, filename);
+      if (source && filename && source.getAttribute('src') !== audioSrc) {
+        source.src = audioSrc;
         audio.load();
       }
 
@@ -161,16 +203,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audio.paused) {
           audio.play().catch(() => {
             card.classList.remove('playing');
-            btn.querySelector('.play-icon').textContent = '▶';
+            playIcon.textContent = '▶';
             playerContainer.classList.remove('open');
             showPurchasePrompt(productId, 'this audiobook');
           });
           card.classList.add('playing');
-          btn.querySelector('.play-icon').textContent = '❚❚';
+          playIcon.textContent = '❚❚';
         } else {
           audio.pause();
           card.classList.remove('playing');
-          btn.querySelector('.play-icon').textContent = '▶';
+          playIcon.textContent = '▶';
         }
         return;
       }
@@ -188,10 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       playerContainer.classList.add('open');
       card.classList.add('playing');
-      btn.querySelector('.play-icon').textContent = '❚❚';
+      playIcon.textContent = '❚❚';
       audio.play().catch(() => {
         card.classList.remove('playing');
-        btn.querySelector('.play-icon').textContent = '▶';
+        playIcon.textContent = '▶';
         playerContainer.classList.remove('open');
         showPurchasePrompt(productId, 'this audiobook');
       });
@@ -201,11 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       audio.onended = () => {
         card.classList.remove('playing');
-        btn.querySelector('.play-icon').textContent = '▶';
+        playIcon.textContent = '▶';
         playerContainer.classList.remove('open');
-        if (!accessTokens[productId]) {
-          showToast('Preview ended. Purchase this audiobook to unlock the full recording.');
-        }
+        if (!ownedProducts.has(productId)) showToast('Preview ended. Purchase this audiobook to unlock the full recording.');
         currentAudio = null;
         currentPlayingCard = null;
       };
@@ -215,9 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Card click to play toggle
   document.querySelectorAll('.chapter-card').forEach(card => {
     card.addEventListener('click', (e) => {
+      if (!(e.target instanceof Element)) return;
       if (e.target.closest('.chapter-play-btn') || e.target.closest('.chapter-player')) return;
       const btn = card.querySelector('.chapter-play-btn');
-      if (btn) btn.click();
+      if (btn instanceof HTMLElement) btn.click();
     });
   });
 
@@ -232,6 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const filter = btn.getAttribute('data-filter');
       bookCards.forEach(card => {
+        if (!(card instanceof HTMLElement)) return;
         const cat = card.getAttribute('data-category');
         if (filter === 'all' || cat === filter || (filter === 'combo' && cat === 'combo')) {
           card.style.display = 'flex';
@@ -244,14 +286,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 6. RAZORPAY PAYMENT TRANSACTION HANDLER & TOAST SYSTEM
-  let cartCount = 0;
-  const cartBadge = document.getElementById('cart-count');
-  
+  /** @param {string} message */
   function showToast(message) {
     let container = document.querySelector('.toast-container');
     if (!container) {
       container = document.createElement('div');
       container.className = 'toast-container';
+      container.setAttribute('role', 'status');
+      container.setAttribute('aria-live', 'polite');
       document.body.appendChild(container);
     }
 
@@ -269,84 +311,162 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3500);
   }
 
+  class ApiError extends Error {
+    /** @param {string} message @param {number} status */
+    constructor(message, status) { super(message); this.status = status; }
+  }
+
+  /** @param {string} path @param {unknown} payload */
   async function api(path, payload) {
     const response = await fetch(`${BACKEND_BASE_URL}${path}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload), credentials: 'same-origin'
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || 'Something went wrong. Please try again.');
+    if (!response.ok) {
+      throw new ApiError(data.message || 'Something went wrong. Please try again.', response.status);
+    }
     return data;
   }
 
+  /** @param {PaymentProof} proof @param {HTMLButtonElement} button */
+  async function completePurchase(proof, button) {
+    pendingVerifications.set(proof.product_id, proof);
+    savePendingVerifications();
+    let result;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        result = await api('/api/verify-payment', proof);
+        break;
+      } catch (error) {
+        if (!(error instanceof ApiError) || ![409, 502, 503].includes(error.status) || attempt === 7) throw error;
+        button.textContent = 'Confirming payment…';
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    // Verification has already set the server session. A failed library refresh
+    // must not make this buyer pay again or hide their download button.
+    ownedProducts.add(result.product_id);
+    pendingVerifications.delete(proof.product_id);
+    savePendingVerifications();
+    updatePurchaseLabels();
+    await refreshPurchases().catch(() => {});
+    updateChapterSources(result.product_id);
+    await triggerDownload(result.product_id);
+    showToast('Payment confirmed. Download requested; use Download purchase to download again.');
+  }
+
+  /** @param {string} productId @param {HTMLButtonElement} button */
   async function initiateRazorpayPayment(productId, button) {
+    if (publicFanEdition) {
+      window.location.assign(officialSagaUrl);
+      return;
+    }
+    if (checkoutActive) { showToast('Finish the current checkout before starting another.'); return; }
+    checkoutActive = true;
     button.disabled = true;
     const originalLabel = button.textContent;
     button.textContent = 'Preparing secure checkout…';
     try {
-      const currencySelect = document.getElementById('checkout-currency');
-      const currency = currencySelect ? currencySelect.value : 'INR';
-      const order = await api('/api/order', { product_id: productId, currency });
-      if (order.simulation) {
-        const accessResponse = await api('/api/access/grant', { product_id: productId });
-        accessTokens[productId] = accessResponse.access_token;
-        persistAccessTokens();
-        updateChapterSources(productId);
-        cartCount += 1;
-        if (cartBadge) cartBadge.textContent = cartCount;
-        if (triggerDownload(productId)) {
-          showToast(`Demo checkout ready for ${order.name} — your download has started.`);
-        } else {
-          showToast(`Demo checkout ready for ${order.name} — full access unlocked.`);
-        }
+      if (ownedProducts.has(productId)) {
+        await triggerDownload(productId);
+        button.disabled = false;
+        button.textContent = 'Download purchase';
+        checkoutActive = false;
         return;
       }
-      if (typeof Razorpay === 'undefined') throw new Error('Secure checkout failed to load. Please refresh and try again.');
+      const pending = pendingVerifications.get(productId);
+      if (pending) {
+        await completePurchase(pending, button);
+        button.disabled = false;
+        button.textContent = 'Download purchase';
+        checkoutActive = false;
+        return;
+      }
+      const currencySelect = document.getElementById('checkout-currency');
+      const currency = currencySelect instanceof HTMLSelectElement ? currencySelect.value : 'INR';
+      if (typeof Razorpay === 'undefined') {
+        throw new Error('Razorpay Checkout SDK failed to load. Please check your connection and reload.');
+      }
       const configResponse = await fetch(`${BACKEND_BASE_URL}/api/config`, { credentials: 'same-origin' });
       const config = await configResponse.json();
-      if (!configResponse.ok || !config.payments_enabled || !config.razorpay_key_id) throw new Error('Payments are not configured yet.');
+      if (!configResponse.ok || !config.payments_enabled || !config.razorpay_key_id) {
+        throw new Error('Payments are not configured yet.');
+      }
+      const order = await api('/api/create-order', { product_id: productId, currency });
+
+      button.textContent = 'Awaiting payment…';
+
       const checkout = new Razorpay({
         key: config.razorpay_key_id,
-        amount: order.amount, currency: order.currency, name: 'Red Rising Saga Armory',
-        description: order.name, image: 'hero-bg.png', order_id: order.order_id,
-        theme: { color: '#b91c1c' }, modal: { ondismiss: () => showToast('Checkout cancelled — nothing was charged.') },
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Red Rising Saga Armory',
+        description: order.name,
+        image: 'hero-bg.png',
+        order_id: order.order_id,
+        theme: { color: '#b91c1c' },
+        modal: {
+          ondismiss: () => {
+            showToast('Checkout closed. If a payment is pending, wait for confirmation before retrying.');
+            button.disabled = false;
+            button.textContent = originalLabel;
+            checkoutActive = false;
+          }
+        },
         handler: async response => {
+          button.textContent = 'Verifying payment…';
           try {
-            const result = await api('/api/verify', response);
-            accessTokens[productId] = result.access_token;
-            persistAccessTokens();
-            updateChapterSources(productId);
-            cartCount += 1;
-            if (cartBadge) cartBadge.textContent = cartCount;
-            if (triggerDownload(productId)) {
-              showToast('Payment verified securely. Your download has started.');
-            } else {
-              showToast('Payment verified securely. Thank you, Howler.');
-            }
-          } catch (error) { showToast(error.message); }
+            await completePurchase({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              product_id: productId
+            }, button);
+          } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Payment verification failed.');
+          } finally {
+            button.disabled = false;
+            checkoutActive = false;
+            button.textContent = ownedProducts.has(productId) ? 'Download purchase' : 'Retry payment verification';
+          }
         }
       });
+
+      checkout.on('payment.failed', function() {
+        showToast('Payment failed or was declined.');
+      });
+
       checkout.open();
     } catch (error) {
-      showToast(error.message || 'Checkout could not be started.');
-    } finally {
+      showToast(error instanceof Error ? error.message : 'Checkout could not be started.');
+      checkoutActive = false;
       button.disabled = false;
-      button.textContent = originalLabel;
+      button.textContent = ownedProducts.has(productId) ? 'Download purchase' : pendingVerifications.has(productId) ? 'Retry payment verification' : originalLabel;
     }
   }
 
   document.querySelectorAll('.buy-btn').forEach(btn => {
+    if (!(btn instanceof HTMLButtonElement)) return;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const productId = btn.getAttribute('data-product-id');
       if (productId) initiateRazorpayPayment(productId, btn);
     });
   });
+  if (publicFanEdition) {
+    document.querySelectorAll('.buy-btn').forEach(button => { button.textContent = 'Find official edition'; });
+    document.querySelectorAll('.book-pricing-box .price-tags').forEach(element => { element.textContent = 'Official edition'; });
+  } else {
+    updatePurchaseLabels();
+    refreshPurchases().catch(() => {});
+  }
 
   // 7. 3D CHARACTER MODAL SYSTEM
   const modalOverlay = document.getElementById('modal-overlay');
   const modalBox = document.getElementById('modal-box');
 
+  /** @param {Element} card */
   function renderCharacterModal(card) {
     if (!modalBox) return;
 
