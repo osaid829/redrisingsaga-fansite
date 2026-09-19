@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Red Rising Saga by Pierce Brown — Audiobooks, 3D Character Gallery, Ebooks & Complete Store. Per aspera ad astra.">
+  <title>RED RISING SAGA — Part I: Helldiver & Official Store</title>
+  <!-- SEO Meta Tags -->
+  <link rel="canonical" href="https://redrisingsaga.com/">
+  <meta name="keywords" content="Red Rising, Pierce Brown, Darrow, Reaper, Golden Son, Morning Star, Iron Gold, Dark Age, Light Bringer, Audiobooks, Ebooks, Sci-Fi Fantasy Books">
+  <meta name="author" content="Red Rising Fan Portal">
+
+  <!-- Open Graph / Facebook Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://redrisingsaga.com/">
+  <meta property="og:site_name" content="Red Rising Saga Portal">
+  <meta property="og:title" content="RED RISING SAGA — Audiobooks, Ebooks & Official Store">
+  <meta property="og:description" content="Immerse yourself in Pierce Brown's Red Rising Saga. Listen to Part I Audiobooks, explore 3D character lore, and purchase full ebooks & combos. Per aspera ad astra.">
+  <meta property="og:image" content="hero-bg.png">
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://redrisingsaga.com/">
+  <meta name="twitter:title" content="RED RISING SAGA — Audiobooks, Ebooks & Official Store">
+  <meta name="twitter:description" content="Immerse yourself in Pierce Brown's Red Rising Saga. Listen to Part I Audiobooks, explore character lore, and download ebooks.">
+  <meta name="twitter:image" content="hero-bg.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="hero-bg.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <!-- Schema.org JSON-LD Structured Data for Search Engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BookSeries",
+        "name": "Red Rising Saga",
+        "author": {
+          "@type": "Person",
+          "name": "Pierce Brown"
+        },
+        "genre": "Science Fiction / Space Opera",
+        "description": "A sci-fi series following Darrow of Lykos, a Red who infiltrates the ruling Gold caste to break the chains of an oppressive color-coded society on Mars.",
+        "hasPart": [
+          { "@type": "Book", "name": "Red Rising" },
+          { "@type": "Book", "name": "Golden Son" },
+          { "@type": "Book", "name": "Morning Star" },
+          { "@type": "Book", "name": "Iron Gold" },
+          { "@type": "Book", "name": "Dark Age" },
+          { "@type": "Book", "name": "Light Bringer" }
+        ]
+      },
+      {
+        "@type": "Product",
+        "name": "Red Rising Complete 6-Book Ebooks & Audiobooks Mega Combo",
+        "image": "hero-bg.png",
+        "description": "All 6 novels (Red Rising, Golden Son, Morning Star, Iron Gold, Dark Age, and Light Bringer) in EPUB format + Full Unabridged Audiobooks.",
+        "offers": {
+          "@type": "Offer",
+          "price": "8.99",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "url": "https://redrisingsaga.com/#store"
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-sigil">⚔</span>
+        <span>Red Rising</span>
+      </a>
+      <div class="nav-links">
+        <a href="#audiobook">Audiobooks</a>
+        <a href="#characters">Characters</a>
+        <a href="#store">Store & Pricing</a>
+        <a href="#ebook">Ebook</a>
+        <a href="#hierarchy">Hierarchy</a>
+        <a href="#store" class="btn btn-red" style="padding: 6px 16px; font-size: 0.8rem;" aria-label="View store">
+          🛒 Cart <span class="nav-cart-badge" id="cart-count">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO 3D SECTION ===== -->
+  <section class="hero" id="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-particles" id="hero-particles"></div>
+    <div class="hero-content tilt-card">
+      <p class="hero-tagline">PIERCE BROWN'S EPIC SAGA</p>
+      <h1 class="hero-title">
+        <span class="title-red">RED</span>
+        <span class="title-rising">RISING</span>
+      </h1>
+      <p class="hero-quote">"I would have lived in peace. But my enemies brought me war."</p>
+      <div class="hero-cta">
+        <a href="#audiobook" class="btn btn-primary">
+          <span class="btn-icon">▶</span> Listen to Chapters
+        </a>
+        <a href="#store" class="btn btn-red">
+          <span class="btn-icon">🛒</span> Explore Store & Deals
+        </a>
+        <a href="#ebook" class="btn btn-ghost">
+          <span class="btn-icon">📖</span> Free EPUB
+        </a>
+      </div>
+      <div class="hero-contact">
+        <a href="https://www.instagram.com/bugsbunny.os/" target="_blank" rel="noopener noreferrer">
+          <span class="contact-icon">📸</span> Instagram: @bugsbunny.os
+        </a>
+        <p>For any issues or to buy directly from me.</p>
+      </div>
+      <div class="hero-meta">
+        <div class="meta-pill"><span class="pill-dot"></span> Book 1: Red Rising</div>
+        <div class="meta-pill">PART I — SLAVE (Ch. 1 - 6)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== AUDIOBOOK SECTION ===== -->
+  <section class="section audiobook-section" id="audiobook">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Book 1 — Audiobooks</p>
+        <h2 class="section-title">PART I — <span class="text-gold">SLAVE</span></h2>
+        <p class="section-sub">"There is a flower that grows on Mars. It is red and harsh and fit for our soil. It is called haemanthus. It means 'blood blossom.'"</p>
+      </div>
+
+      <!-- ORDERED LIST OF AUDIOBOOK CHAPTERS -->
+      <ol class="chapter-list" id="chapter-list">
+
+        <!-- Chapter 1 -->
+        <li class="chapter-card tilt-card" data-chapter="1">
+          <div class="chapter-number">01</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 1 — Hell Diver</h3>
+            <p class="chapter-desc">Darrow descends deep into the fiery mines of Mars, risking his life for helium-3 to terraform the surface.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 01.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 1" data-product-id="red-rising-audio" data-src="CHAPTER 01.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-1">
+            <audio controls preload="none">
+              <source src="red rising audiobook1/CHAPTER 01.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <!-- Chapter 2 -->
+        <li class="chapter-card tilt-card" data-chapter="2">
+          <div class="chapter-number">02</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 2 — The Laurel</h3>
+            <p class="chapter-desc">A celebration of hard labor turns bitter as Darrow confronts the corruption and injustice of the ArchGovernor.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 02.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 2" data-product-id="red-rising-audio" data-src="CHAPTER 02.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-2">
+            <audio controls preload="none">
+              <source src="CHAPTER 02.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <!-- Chapter 3 -->
+        <li class="chapter-card tilt-card" data-chapter="3">
+          <div class="chapter-number">03</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 3 — The Song</h3>
+            <p class="chapter-desc">Eo's forbidden melody echoes through the dark tunnels of Lykos, igniting a silent revolution.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 03.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 3" data-product-id="red-rising-audio" data-src="CHAPTER 03.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-3">
+            <audio controls preload="none">
+              <source src="red rising audiobook1/CHAPTER 03.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <!-- Chapter 4 -->
+        <li class="chapter-card tilt-card" data-chapter="4">
+          <div class="chapter-number">04</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 4 — The Carving</h3>
+            <p class="chapter-desc">Rescued from execution by the Sons of Ares, Darrow undergoes an excruciating biological transformation into Gold.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 04.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 4" data-product-id="red-rising-audio" data-src="CHAPTER 04.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-4">
+            <audio controls preload="none">
+              <source src="CHAPTER 04.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <!-- Chapter 5 -->
+        <li class="chapter-card tilt-card" data-chapter="5">
+          <div class="chapter-number">05</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 5 — The Institute</h3>
+            <p class="chapter-desc">Darrow infiltrates the elite Society to take the entry exam for the Institute alongside Mars' most formidable Golds.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 05.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 5" data-product-id="red-rising-audio" data-src="CHAPTER 05.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-5">
+            <audio controls preload="none">
+              <source src="CHAPTER 05.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <!-- Chapter 6 -->
+        <li class="chapter-card tilt-card" data-chapter="6">
+          <div class="chapter-number">06</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Chapter 6 — The Passage</h3>
+            <p class="chapter-desc">The brutal rite of passage begins. Darrow must prove his deadly resolve to survive among the apex predators of Gold.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 06.mp3</div>
+          <button class="chapter-play-btn" aria-label="Play Chapter 6" data-product-id="red-rising-audio" data-src="CHAPTER 06.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-6">
+            <audio controls preload="none">
+              <source src="CHAPTER 06.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+      </ol>
+
+      <div class="section-header" style="margin-top: 2.5rem;">
+        <p class="section-label">Additional Audiobook Previews</p>
+        <h3 class="section-title" style="font-size: 1.4rem;">Golden Son & Iron Gold Preview Access</h3>
+        <p class="section-sub">Each preview unlocks the first 10 minutes of the selected audiobook. Purchase to continue beyond the preview window.</p>
+      </div>
+
+      <ol class="chapter-list">
+        <li class="chapter-card tilt-card" data-chapter="7">
+          <div class="chapter-number">GS</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Golden Son — Preview</h3>
+            <p class="chapter-desc">Listen to the opening of Golden Son before purchasing the full audiobook.</p>
+          </div>
+          <div class="chapter-duration">CHAPTER 01.mp3</div>
+          <button class="chapter-play-btn" aria-label="Preview Golden Son" data-product-id="golden-son-audio" data-src="CHAPTER 01.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-gs">
+            <audio controls preload="none">
+              <source src="CHAPTER 01.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+
+        <li class="chapter-card tilt-card" data-chapter="8">
+          <div class="chapter-number">IG</div>
+          <div class="chapter-info">
+            <h3 class="chapter-name">Iron Gold — Preview</h3>
+            <p class="chapter-desc">Hear the opening chapter of Iron Gold and then unlock the rest after purchase.</p>
+          </div>
+          <div class="chapter-duration">Iron Gold.mp3</div>
+          <button class="chapter-play-btn" aria-label="Preview Iron Gold" data-product-id="iron-gold-audio" data-src="Iron Gold.mp3">
+            <span class="play-icon">▶</span>
+          </button>
+          <div class="chapter-player" id="player-ig">
+            <audio controls preload="none">
+              <source src="CHAPTER 01.mp3" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== 3D CHARACTERS GALLERY SECTION ===== -->
+  <section class="section characters-section" id="characters">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Legends & Champions</p>
+        <h2 class="section-title">Icons of <span class="text-gold">The Rising</span></h2>
+        <p class="section-sub">Hover and click on any warrior to inspect their 3D profile, faction allegiance, and legendary history.</p>
+      </div>
+
+      <div class="characters-grid">
+
+        <!-- Darrow (Reaper) -->
+        <div class="char-card tilt-card" 
+             data-name="Darrow of Lykos (The Reaper)" 
+             data-role="Leader of the Howlers / Red Helldiver" 
+             data-bio="A former Red Helldiver carved into a Gold warrior. Darrow infiltrates the highest echelons of Gold society to ignite a revolution that will break the chains of oppression across the solar system." 
+             data-quote="I am the Reaper and I know no fear.">
+          <span class="char-badge">Gold / Red</span>
+          <div class="char-img-wrap">
+            <img src="darrow.jpg" alt="Darrow as Reaper" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Darrow (The Reaper)</h3>
+            <p class="char-title">Arch-rebel & Helldiver</p>
+            <p class="char-desc">Carved into a Gold to bring down the Society from within.</p>
+          </div>
+        </div>
+
+        <!-- Sevro au Barca -->
+        <div class="char-card tilt-card" 
+             data-name="Sevro au Barca (Goblin)" 
+             data-role="Howler 1 / Ares Successor" 
+             data-bio="Feared leader of the Howlers and Darrow's most fiercely loyal brother. Unorthodox, dangerous, and unapologetically wild, Sevro wears a wolf cloak into battle." 
+             data-quote="Shit escalated.">
+          <span class="char-badge">Howlers</span>
+          <div class="char-img-wrap">
+            <img src="sevro au barca.jpg" alt="Sevro au Barca" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Sevro au Barca</h3>
+            <p class="char-title">Howler 1 / Goblin</p>
+            <p class="char-desc">Darrow's wild and fiercely loyal right hand.</p>
+          </div>
+        </div>
+
+        <!-- Virginia au Augustus (Mustang) -->
+        <div class="char-card tilt-card" 
+             data-name="Virginia au Augustus (Mustang)" 
+             data-role="Sovereign of the Solar Republic" 
+             data-bio="Daughter of the ArchGovernor and brilliant strategist. Mustang balances political mastermind tactics with deep compassion for humanity." 
+             data-quote="Live for more.">
+          <span class="char-badge">House Augustus</span>
+          <div class="char-img-wrap">
+            <img src="virginia au augustus.jpg" alt="Virginia au Augustus" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Virginia (Mustang)</h3>
+            <p class="char-title">Sovereign & Strategist</p>
+            <p class="char-desc">Brilliant political mind and lover of Darrow.</p>
+          </div>
+        </div>
+
+        <!-- Cassius au Bellona -->
+        <div class="char-card tilt-card" 
+             data-name="Cassius au Bellona" 
+             data-role="Morning Knight of the Solar Republic" 
+             data-bio="Former rival turned legendary blade. Cassius is a razor master of House Bellona whose honor guides his path through war and redemption." 
+             data-quote="My honor remains.">
+          <span class="char-badge">House Bellona</span>
+          <div class="char-img-wrap">
+            <img src="Casio_au_Bellona.webp" alt="Cassius au Bellona" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Cassius au Bellona</h3>
+            <p class="char-title">Morning Knight</p>
+            <p class="char-desc">Master duelist driven by honor and brotherhood.</p>
+          </div>
+        </div>
+
+        <!-- Eo of Lykos -->
+        <div class="char-card tilt-card" 
+             data-name="Eo of Lykos" 
+             data-role="The Catalyst of Revolution" 
+             data-bio="Darrow's beloved wife whose martyrdom sparked the rise of the Sons of Ares. Her forbidden song became the anthem of rebellion across Mars." 
+             data-quote="Break the chains.">
+          <span class="char-badge">Red Martyr</span>
+          <div class="char-img-wrap">
+            <img src="Eo.jpg" alt="Eo of Lykos" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Eo of Lykos</h3>
+            <p class="char-title">The Catalyst</p>
+            <p class="char-desc">Whose sacrifice ignited the flame of freedom.</p>
+          </div>
+        </div>
+
+        <!-- Victra au Julii -->
+        <div class="char-card tilt-card" 
+             data-name="Victra au Julii" 
+             data-role="Commodore of House Julii" 
+             data-bio="Fierce, wealthy, and unstoppable Gold warrior of House Julii. Victra stands shoulder-to-shoulder with the Howlers in defense of her family." 
+             data-quote="I do not bow.">
+          <span class="char-badge">House Julii</span>
+          <div class="char-img-wrap">
+            <img src="vicra au julli.jpg" alt="Victra au Julii" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Victra au Julii</h3>
+            <p class="char-title">Warrior & Fleet Commander</p>
+            <p class="char-desc">Relentless powerhouse of House Julii.</p>
+          </div>
+        </div>
+
+        <!-- Lorn au Arcos -->
+        <div class="char-card tilt-card" 
+             data-name="Lorn au Arcos" 
+             data-role="Stained Sovereign & Rage Knight" 
+             data-bio="The greatest Razor Master in history. Mentor to Darrow, Lorn taught the Willow Way, the deadliest swordsmanship technique in the galaxy." 
+             data-quote="Never trust a Gold.">
+          <span class="char-badge">Rage Knight</span>
+          <div class="char-img-wrap">
+            <img src="Lorn au Arcos.jpg" alt="Lorn au Arcos" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">Lorn au Arcos</h3>
+            <p class="char-title">Razor Master & Mentor</p>
+            <p class="char-desc">Creator of the legendary Willow Way fencing style.</p>
+          </div>
+        </div>
+
+        <!-- The Howlers -->
+        <div class="char-card tilt-card" 
+             data-name="The Howlers" 
+             data-role="Elite Strike Force of Mars" 
+             data-bio="The most feared special forces squad in the Republic. Wearing wolf pelts, the Howlers drop into battle to turn the tide of impossible wars." 
+             data-quote="Omnis Vir Lupis — Everyone a Wolf.">
+          <span class="char-badge">Elite Squad</span>
+          <div class="char-img-wrap">
+            <img src="howlers.jpg" alt="The Howlers" class="char-img">
+          </div>
+          <div class="char-info">
+            <h3 class="char-name">The Howlers</h3>
+            <p class="char-title">Brotherhood of Wolves</p>
+            <p class="char-desc">Fearless shock troopers led by Darrow and Sevro.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3D STORE & PRICING SECTION ===== -->
+  <section class="section store-section" id="store">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Official Store & Digital Library</p>
+        <h2 class="section-title">The <span class="text-gold">Red Rising Armory</span></h2>
+        <p class="section-sub">Acquire audiobooks, standalone ebooks, or the complete bundle combo. Instant access upon purchase.</p>
+      </div>
+
+      <!-- FILTER TABS -->
+      <div class="store-tabs">
+        <button class="store-tab-btn active" data-filter="all">All Releases</button>
+        <button class="store-tab-btn" data-filter="audio">Audiobooks ($1.99 - $2.49)</button>
+        <button class="store-tab-btn" data-filter="ebook">Ebooks ($0.99)</button>
+        <button class="store-tab-btn" data-filter="combo">Combo Bundle ($8.99)</button>
+      </div>
+      <div class="checkout-market" aria-label="Checkout region">
+        <label for="checkout-currency">Paying from</label>
+        <select id="checkout-currency" name="checkout-currency">
+          <option value="INR">India — INR ₹</option>
+          <option value="USD">International — USD $</option>
+        </select>
+      </div>
+
+      <div class="books-grid">
+
+        <!-- BOOK 1: RED RISING (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="red rising.jpg" alt="Red Rising Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">First Trilogy • Book 1</span>
+            <h3 class="book-item-title">Red Rising (Audiobook)</h3>
+            <p class="book-item-desc">Full unabridged audio narration of Darrow's origin and his rise through the Institute of Mars.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$1.99</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="red-rising-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK 2: GOLDEN SON (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="Golden son cover.jpg" alt="Golden Son Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">First Trilogy • Book 2</span>
+            <h3 class="book-item-title">Golden Son (Audiobook)</h3>
+            <p class="book-item-desc">Darrow wages galactic war across space fleets and Gold High Houses to turn the Society upside down.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$1.99</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="golden-son-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK 3: MORNING STAR (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="morning star cover.jpg" alt="Morning Star Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">First Trilogy • Book 3</span>
+            <h3 class="book-item-title">Morning Star (Audiobook)</h3>
+            <p class="book-item-desc">The climactic finale of the original trilogy as the Sons of Ares assault Luna itself.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$1.99</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="morning-star-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK 4: IRON GOLD (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="iron gold cover.jpg" alt="Iron Gold Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Second Era • Book 4</span>
+            <h3 class="book-item-title">Iron Gold (Audiobook)</h3>
+            <p class="book-item-desc">Ten years after the revolution, new heroes and villains emerge in a fragile Solar Republic.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$2.49</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="iron-gold-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK 5: DARK AGE (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="Dark age cover.jpg" alt="Dark Age Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Second Era • Book 5</span>
+            <h3 class="book-item-title">Dark Age (Audiobook)</h3>
+            <p class="book-item-desc">A dark, epic saga of survival on Mercury as Darrow faces his deadliest adversaries.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$2.49</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="dark-age-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOOK 6: LIGHT BRINGER (Audiobook) -->
+        <div class="book-item-card tilt-card" data-category="audio">
+          <div class="book-cover-wrap">
+            <img src="Light bringer cover.jpg" alt="Light Bringer Cover" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Second Era • Book 6</span>
+            <h3 class="book-item-title">Light Bringer (Audiobook)</h3>
+            <p class="book-item-desc">Darrow journeys into the deep Rim to find hope and rekindle the light of freedom.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$2.49</span>
+                <span class="price-sub">Audiobook Edition</span>
+              </div>
+              <button class="btn btn-primary buy-btn" data-product-id="light-bringer-audio">
+                <span>🛒</span> Buy Audiobook
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEPARATE INDIVIDUAL EBOOKS ($0.99 EACH) -->
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="red rising.jpg" alt="Red Rising Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 1</span>
+            <h3 class="book-item-title">Red Rising (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. Complete text, ready for Kindle & Apple Books.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="red-rising-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="Golden son cover.jpg" alt="Golden Son Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 2</span>
+            <h3 class="book-item-title">Golden Son (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. High resolution artwork and unabridged text.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="golden-son-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="morning star cover.jpg" alt="Morning Star Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 3</span>
+            <h3 class="book-item-title">Morning Star (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. The epic conclusion of Darrow's initial rebellion.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="morning-star-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="iron gold cover.jpg" alt="Iron Gold Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 4</span>
+            <h3 class="book-item-title">Iron Gold (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. The dawn of the Second Era of the Solar Republic.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="iron-gold-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="Dark age cover.jpg" alt="Dark Age Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 5</span>
+            <h3 class="book-item-title">Dark Age (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. Brutal conflict across the desert sands of Mercury.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="dark-age-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="book-item-card tilt-card" data-category="ebook">
+          <div class="book-cover-wrap">
+            <img src="Light bringer cover.jpg" alt="Light Bringer Ebook" class="book-cover-img">
+          </div>
+          <div class="book-details-content">
+            <span class="book-era-tag">Standalone Ebook • Book 6</span>
+            <h3 class="book-item-title">Light Bringer (Ebook)</h3>
+            <p class="book-item-desc">EPUB digital book edition. Journey to the Outer Rim to unite the free legions.</p>
+            <div class="book-pricing-box">
+              <div class="price-tags">
+                <span class="price-audio">$0.99</span>
+                <span class="price-sub">EPUB Format</span>
+              </div>
+              <button class="btn btn-ghost buy-btn" data-product-id="light-bringer-ebook">
+                <span>📖</span> Buy Ebook ($0.99)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPECIAL BUNDLE COMBO DEAL (EBOOKS + AUDIOBOOKS - $8.99) -->
+        <div class="book-item-card bundle-card tilt-card" data-category="combo" style="grid-column: 1 / -1;">
+          <span class="bundle-badge">Ultimate Combo • Save over 60%</span>
+          <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center; width: 100%;">
+            <div style="display: flex; gap: -20px; overflow: hidden; max-width: 420px; height: 190px; align-items: center;">
+              <img src="red rising.jpg" style="width: 100px; height: 150px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); transform: rotate(-8deg);">
+              <img src="Golden son cover.jpg" style="width: 100px; height: 150px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); transform: rotate(-3deg);">
+              <img src="morning star cover.jpg" style="width: 100px; height: 150px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); transform: rotate(2deg);">
+              <img src="iron gold cover.jpg" style="width: 100px; height: 150px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); transform: rotate(7deg);">
+            </div>
+            <div style="flex: 1; min-width: 280px;">
+              <span class="book-era-tag" style="color: var(--clr-red-lt);">COMPLETE SAGA MEGA BUNDLE</span>
+              <h3 class="book-item-title" style="font-size: 1.8rem;">Complete Ebooks & Audiobooks Combo Bundle</h3>
+              <p class="book-item-desc" style="font-size: 0.95rem;">Get ALL 6 Ebooks AND ALL 6 Full Audiobooks (Red Rising, Golden Son, Morning Star, Iron Gold, Dark Age, & Light Bringer) in one mega bundle package.</p>
+              <div class="book-pricing-box" style="border: none; padding-top: 0;">
+                <div class="price-tags">
+                  <span class="price-audio" style="font-size: 1.6rem; color: var(--clr-gold-lt);">$8.99 <s style="font-size: 1rem; color: rgba(247,235,211,0.3);">$25.00</s></span>
+                  <span class="price-sub">Instant Access (All 6 Ebooks + Audiobooks Combo)</span>
+                </div>
+                <button class="btn btn-red buy-btn" style="padding: 14px 32px; font-size: 0.95rem;" data-product-id="saga-combo">
+                  <span>⚡</span> Get Full Combo ($8.99)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STANDALONE EBOOK BOX SECTION ===== -->
+  <section class="section ebook-section" id="ebook">
+    <div class="container">
+      <div class="ebook-card tilt-card">
+        <div class="ebook-glow"></div>
+        <div class="ebook-icon-wrap">
+          <span class="ebook-icon">📕</span>
+        </div>
+        <div class="ebook-content">
+          <p class="section-label">Digital Edition</p>
+          <h2 class="ebook-title">Red Rising Book 1 — <span class="text-gold">EPUB</span></h2>
+          <p class="ebook-desc">The complete first book of Pierce Brown's bestselling saga in EPUB format. Optimized for Apple Books, Kindle, Kobo, and e-readers.</p>
+          <div class="ebook-meta">
+            <span class="ebook-meta-item">📁 EPUB Format</span>
+            <span class="ebook-meta-item">📐 ~3.07 MB</span>
+            <span class="ebook-meta-item">⚡ Instant Access</span>
+          </div>
+          <div class="book-pricing-box" style="border: none; padding-top: 0;">
+            <div class="price-tags">
+              <span class="price-audio" style="font-size: 1.6rem; color: var(--clr-gold-lt);">$0.99</span>
+              <span class="price-sub">EPUB Digital Edition</span>
+            </div>
+            <button class="btn btn-primary buy-btn" data-product-id="red-rising-ebook" style="padding: 14px 32px; font-size: 0.95rem;">
+              <span>🛒</span> Buy Ebook ($0.99)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== COLOR HIERARCHY SECTION ===== -->
+  <section class="section hierarchy-section" id="hierarchy">
+    <div class="container">
+      <div class="hierarchy-wrap tilt-card">
+        <img src="colours hierarchy.jpg" alt="Colours Hierarchy" class="hierarchy-img">
+        <div class="hierarchy-text">
+          <p class="section-label">The Society System</p>
+          <h3>Color Hierarchy of Mars</h3>
+          <p>In Pierce Brown's universe, humanity is strictly divided into fourteen specialized color-coded castes, ranging from the ruling Gold highborns down to the enslaved Red laborers in the mines of Mars.</p>
+          <div class="about-colors">
+            <div class="color-chip color-gold">Gold — Rulers</div>
+            <div class="color-chip color-red">Red — Laborers</div>
+            <div class="color-chip color-grey">Grey — Military</div>
+            <div class="color-chip color-obsidian">Obsidian — Warriors</div>
+            <div class="color-chip color-blue">Blue — Navigators</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-logo">⚔ RED RISING SAGA</p>
+        <p class="footer-copy">Per aspera ad astra • Through hardships to the stars. Pierce Brown Fan Universe.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== 3D MODAL OVERLAY ===== -->
+  <div class="modal-overlay" id="modal-overlay" role="presentation">
+    <div class="modal-box" id="modal-box" role="dialog" aria-modal="true" aria-label="Details dialog">
+      <!-- Populated via script.js -->
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

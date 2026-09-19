@@ -1,0 +1,28 @@
+# Large media files - hosted externally or via server
+*.mp3
+*.m4b
+*.epub
+*.jpg
+*.jpeg
+*.webp
+*.avif
+*.png
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest/
+*.egg-info/
+.venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local

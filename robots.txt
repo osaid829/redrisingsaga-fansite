@@ -1,0 +1,5 @@
+# Red Rising Saga — Robots.txt
+User-agent: *
+Allow: /
+
+Sitemap: https://redrisingsaga.com/sitemap.xml
