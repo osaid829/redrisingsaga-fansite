@@ -1,6 +1,7 @@
 # Never upload local credentials, databases, tests, source-only checkout code,
 # or the private ebook/audiobook library to the static fan-site deployment.
 .git/
+.python
 .env
 .venv/
 node_modules/
