@@ -1,0 +1,31 @@
+# Never upload local credentials, databases, tests, source-only checkout code,
+# or the private ebook/audiobook library to the static fan-site deployment.
+.git/
+.env
+.venv/
+node_modules/
+__pycache__/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.epub
+*.mp3
+*.m4b
+audibooks/
+red rising audiobook1/
+GOLDEN SON AUDIOBOOK/
+MORNING STAR AUDIOBOOK/
+IRON GOLD AUDIOBOOK/
+DARK AGE AUDIOBOOK/
+server.py
+commerce.py
+requirements.txt
+test_*.py
+test-pass.txt
+PAYMENTS.md
+package.json
+package-lock.json
+tsconfig.json
+types.d.ts
+.github/
